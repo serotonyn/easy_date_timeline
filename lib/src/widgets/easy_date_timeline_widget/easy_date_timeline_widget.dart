@@ -45,9 +45,9 @@ class EasyDateTimeLine extends StatefulWidget {
   /// the color of the text and background, and the font size.
   final EasyDayProps dayProps;
 
-  /// Called when the selected date in the timeline changes.
-  /// This function takes a `DateTime` object as its parameter, which represents the new selected date.
-  final OnDateChangeCallBack? onDateChange;
+  /// Called when Z
+  /// This function takes a list of `DateTime` object as its parameter, which represents the new selected date.
+  final void Function(List<DateTime> selectedDates)? onDateChange;
 
   /// > **NOTE:**
   /// > When utilizing the `itemBuilder`, it is essential to provide the width of each day for the date timeline widget.
@@ -74,7 +74,7 @@ class _EasyDateTimeLineState extends State<EasyDateTimeLine> {
   late EasyMonth _easyMonth;
   late int _initialDay;
 
-  late ValueNotifier<DateTime?> _focusedDateListener;
+  late ValueNotifier<List<DateTime>> _focusedDatesListener;
 
   DateTime get initialDate => widget.initialDate;
   @override
@@ -86,17 +86,29 @@ class _EasyDateTimeLineState extends State<EasyDateTimeLine> {
     _easyMonth =
         EasyDateUtils.convertDateToEasyMonth(widget.initialDate, widget.locale);
     _initialDay = widget.initialDate.day;
-    _focusedDateListener = ValueNotifier(initialDate);
+    _focusedDatesListener = ValueNotifier([]);
   }
 
   void _onFocusedDateChanged(DateTime date) {
-    _focusedDateListener.value = date;
-    widget.onDateChange?.call(date);
+    if (_focusedDatesListener.value.contains(date)) {
+      if (!isLastOrFirstDay(_focusedDatesListener.value, date)) return;
+      _focusedDatesListener.value = List.from(_focusedDatesListener.value)
+        ..remove(date);
+    } else {
+      if (_focusedDatesListener.value.isNotEmpty &&
+          !isConsecutiveDay(_focusedDatesListener.value, date)) {
+        return;
+      }
+      _focusedDatesListener.value = List.from(_focusedDatesListener.value)
+        ..add(date);
+    }
+
+    widget.onDateChange?.call(_focusedDatesListener.value);
   }
 
   @override
   void dispose() {
-    _focusedDateListener.dispose();
+    _focusedDatesListener.dispose();
     super.dispose();
   }
 
@@ -124,8 +136,8 @@ class _EasyDateTimeLineState extends State<EasyDateTimeLine> {
         ? EasyColors.dayAsNumColor
         : Colors.white;
     return ValueListenableBuilder(
-      valueListenable: _focusedDateListener,
-      builder: (context, focusedDate, child) => Column(
+      valueListenable: _focusedDatesListener,
+      builder: (context, focusedDates, child) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (_headerProps.showHeader)
@@ -142,7 +154,7 @@ class _EasyDateTimeLineState extends State<EasyDateTimeLine> {
                     : MainAxisAlignment.spaceBetween,
                 children: [
                   SelectedDateWidget(
-                    date: focusedDate ?? initialDate,
+                    date: initialDate,
                     locale: widget.locale,
                     headerProps: _headerProps,
                   ),
@@ -164,7 +176,7 @@ class _EasyDateTimeLineState extends State<EasyDateTimeLine> {
               day: _initialDay,
             ),
             inactiveDates: widget.disabledDates,
-            focusedDate: focusedDate,
+            focusedDates: focusedDates,
             onDateChange: _onFocusedDateChanged,
             timeLineProps: widget.timeLineProps,
             dayProps: widget.dayProps,

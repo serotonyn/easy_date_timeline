@@ -11,7 +11,7 @@ class TimeLineWidget extends StatefulWidget {
   TimeLineWidget({
     super.key,
     required this.initialDate,
-    required this.focusedDate,
+    required this.focusedDates,
     required this.activeDayTextColor,
     required this.activeDayColor,
     this.inactiveDates,
@@ -32,7 +32,7 @@ class TimeLineWidget extends StatefulWidget {
   final DateTime initialDate;
 
   /// The currently focused date in the timeline.
-  final DateTime? focusedDate;
+  final List<DateTime>? focusedDates;
 
   /// The color of the text for the selected day.
   final Color activeDayTextColor;
@@ -144,8 +144,9 @@ class _TimeLineWidgetState extends State<TimeLineWidget> {
               final currentDate =
                   DateTime(initialDate.year, initialDate.month, index + 1);
 
-              final isSelected = EasyDateUtils.isSameDay(
-                  widget.focusedDate ?? initialDate, currentDate);
+              final isSelected = widget.focusedDates?.any((focusedDate) =>
+                      EasyDateUtils.isSameDay(focusedDate, currentDate)) ??
+                  false;
 
               bool isDisabledDay = false;
               // Check if this date should be deactivated only for the DeactivatedDates.
